@@ -30,6 +30,27 @@ export default function NDAPreview({ data }: Props) {
         windowWidth: 1200,
         width: el.scrollWidth,
         height: el.scrollHeight,
+        onclone: (clonedDoc) => {
+          // html2canvas v1 can't parse oklch/lab colors that Tailwind v4 emits.
+          // Strip all stylesheets from the clone and replace with safe hex-only CSS.
+          clonedDoc.querySelectorAll("style, link[rel='stylesheet']").forEach(n => n.remove());
+
+          const s = clonedDoc.createElement("style");
+          s.textContent = `
+            * { box-sizing: border-box; }
+            body { font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; margin: 0; }
+            h1 { font-size: 22px; font-weight: 700; text-align: center; margin: 0 0 24px; }
+            h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+            h3 { font-size: 13px; font-weight: 600; margin: 16px 0 4px; }
+            p  { font-size: 13px; margin: 0 0 10px; line-height: 1.6; color: #111827; }
+            strong { font-weight: 700; }
+            a  { color: #2563eb; text-decoration: underline; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+            th { border: 1px solid #9ca3af; padding: 8px 12px; background: #f3f4f6; font-size: 13px; font-weight: 600; text-align: left; color: #111827; }
+            td { border: 1px solid #9ca3af; padding: 8px 12px; font-size: 13px; color: #111827; }
+          `;
+          clonedDoc.head.appendChild(s);
+        },
       });
 
       const imgData = canvas.toDataURL("image/png");
