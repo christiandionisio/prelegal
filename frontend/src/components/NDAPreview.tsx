@@ -1,0 +1,110 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { NDAFormData } from "@/types/nda";
+import { buildDocumentHtml } from "@/lib/nda-template";
+
+interface Props {
+  data: NDAFormData;
+}
+
+export default function NDAPreview({ data }: Props) {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const html = buildDocumentHtml(data);
+
+  async function handleDownload() {
+    if (!previewRef.current) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const jsPDF = (await import("jspdf")).jsPDF;
+
+      const el = previewRef.current;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollY: -window.scrollY,
+        windowWidth: 1200,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const contentWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+      let y = margin;
+      let remaining = imgHeight;
+
+      // Slice the image across multiple PDF pages
+      while (remaining > 0) {
+        const sliceHeight = Math.min(remaining, pageHeight - margin * 2);
+        const srcY = ((imgHeight - remaining) / imgHeight) * canvas.height;
+        const srcHeight = (sliceHeight / imgHeight) * canvas.height;
+
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = srcHeight;
+        const ctx = sliceCanvas.getContext("2d")!;
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcHeight, 0, 0, canvas.width, srcHeight);
+
+        pdf.addImage(sliceCanvas.toDataURL("image/png"), "PNG", margin, y, contentWidth, sliceHeight);
+        remaining -= sliceHeight;
+        if (remaining > 0) {
+          pdf.addPage();
+          y = margin;
+        }
+      }
+
+      pdf.save("mutual-nda.pdf");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50 border-l border-gray-200">
+      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shrink-0">
+        <span className="text-sm font-semibold text-gray-700">Document Preview</span>
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+        >
+          {downloading ? (
+            <>
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              Generating PDF…
+            </>
+          ) : (
+            <>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Download PDF
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="overflow-y-auto flex-1 px-6 py-6">
+        <div
+          ref={previewRef}
+          className="bg-white shadow-sm rounded-lg p-8 max-w-3xl mx-auto"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
+    </div>
+  );
+}
