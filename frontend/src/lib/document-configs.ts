@@ -66,7 +66,7 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
       { id: "paymentProcess", label: "Payment Process", description: "'invoice' or 'automatic payment'" },
       { id: "technicalSupport", label: "Technical Support" },
       { id: "governingLaw", label: "Governing Law" },
-      { id: "jurisdiction", label: "Jurisdiction" },
+      { id: "jurisdiction", label: "Chosen Courts" },
     ],
   },
   {
@@ -78,7 +78,7 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
     party2Label: "Partner",
     fields: [
       { id: "term", label: "Term" },
-      { id: "program", label: "Program Description" },
+      { id: "program", label: "Program" },
       { id: "fees", label: "Fees" },
       { id: "effectiveDate", label: "Effective Date" },
       { id: "governingLaw", label: "Governing Law" },
@@ -111,11 +111,11 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
     fields: [
       { id: "servicesDescription", label: "Services Description" },
       { id: "fees", label: "Fees" },
-      { id: "paymentSchedule", label: "Payment Schedule" },
-      { id: "term", label: "Term" },
+      { id: "paymentSchedule", label: "Payment Period" },
+      { id: "term", label: "SOW Term" },
       { id: "effectiveDate", label: "Effective Date" },
       { id: "governingLaw", label: "Governing Law" },
-      { id: "jurisdiction", label: "Jurisdiction" },
+      { id: "jurisdiction", label: "Chosen Courts" },
     ],
   },
   {
@@ -126,10 +126,10 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
     party1Label: "Provider",
     party2Label: "Customer",
     fields: [
-      { id: "personalDataTypes", label: "Personal Data Types" },
-      { id: "processingPurpose", label: "Processing Purpose" },
-      { id: "dataSubjects", label: "Data Subjects" },
-      { id: "processingDuration", label: "Processing Duration" },
+      { id: "personalDataTypes", label: "Categories of Personal Data" },
+      { id: "processingPurpose", label: "Nature and Purpose of Processing" },
+      { id: "dataSubjects", label: "Categories of Data Subjects" },
+      { id: "processingDuration", label: "Duration of Processing" },
       { id: "governingLaw", label: "Governing Law" },
       { id: "jurisdiction", label: "Jurisdiction" },
     ],
@@ -142,12 +142,12 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
     party1Label: "Provider",
     party2Label: "Customer",
     fields: [
-      { id: "licenseType", label: "License Type" },
-      { id: "licenseScope", label: "License Scope" },
+      { id: "licenseType", label: "Permitted Uses" },
+      { id: "licenseScope", label: "License Limits" },
       { id: "licenseFee", label: "License Fee" },
-      { id: "licenseTerm", label: "License Term" },
+      { id: "licenseTerm", label: "Subscription Period" },
       { id: "governingLaw", label: "Governing Law" },
-      { id: "jurisdiction", label: "Jurisdiction" },
+      { id: "jurisdiction", label: "Chosen Courts" },
     ],
   },
   {
@@ -164,7 +164,7 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
       { id: "term", label: "Term" },
       { id: "effectiveDate", label: "Effective Date" },
       { id: "governingLaw", label: "Governing Law" },
-      { id: "jurisdiction", label: "Jurisdiction" },
+      { id: "jurisdiction", label: "Chosen Courts" },
     ],
   },
   {
@@ -180,7 +180,7 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
       { id: "successCriteria", label: "Success Criteria" },
       { id: "effectiveDate", label: "Effective Date" },
       { id: "governingLaw", label: "Governing Law" },
-      { id: "jurisdiction", label: "Jurisdiction" },
+      { id: "jurisdiction", label: "Chosen Courts" },
     ],
   },
   {
@@ -205,11 +205,10 @@ export const DOCUMENT_CONFIGS: DocumentConfig[] = [
     party1Label: "Provider",
     party2Label: "Customer",
     fields: [
-      { id: "aiFeatures", label: "AI Features" },
-      { id: "trainingOptOut", label: "Training Opt-out" },
-      { id: "effectiveDate", label: "Effective Date" },
-      { id: "governingLaw", label: "Governing Law" },
-      { id: "jurisdiction", label: "Jurisdiction" },
+      { id: "trainingData", label: "Training Data", description: "What customer data may be used for training" },
+      { id: "trainingPurposes", label: "Training Purposes", description: "The purposes for which training is permitted" },
+      { id: "trainingRestrictions", label: "Training Restrictions", description: "Any restrictions on how training data is used" },
+      { id: "improvementRestrictions", label: "Improvement Restrictions", description: "Restrictions on non-training improvement uses" },
     ],
   },
 ];

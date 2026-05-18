@@ -91,20 +91,41 @@ function buildCoverPageHtml(config: DocumentConfig, data: GenericFormData): stri
 }
 
 function substituteTokens(html: string, values: Record<string, string>): string {
+  function lookup(field: string): string {
+    if (values[field] !== undefined) return values[field];
+    // Possessive: "Customer's" → look up "Customer", re-append "'s"
+    if (field.endsWith("’s") || field.endsWith("'s")) {
+      const base = field.replace(/[''’]s$/, "");
+      if (values[base] !== undefined) return values[base] + "’s";
+    }
+    // Plural: "Subscription Periods" → try "Subscription Period"
+    if (field.endsWith("s") && values[field.slice(0, -1)] !== undefined) {
+      return values[field.slice(0, -1)];
+    }
+    return `[${field}]`;
+  }
+
+  // Use [^>]* so spans with extra attributes (e.g. id="...") are also matched
   return html
-    .replace(/<span class="coverpage_link">([^<]+)<\/span>/g, (_, field) =>
-      `<strong>${values[field] ?? `[${field}]`}</strong>`
+    .replace(/<span\b[^>]*class="coverpage_link"[^>]*>([^<]+)<\/span>/g, (_, f) =>
+      `<strong>${lookup(f)}</strong>`
     )
-    .replace(/<span class="keyterms_link">([^<]+)<\/span>/g, (_, field) =>
-      `<strong>${values[field] ?? `[${field}]`}</strong>`
+    .replace(/<span\b[^>]*class="keyterms_link"[^>]*>([^<]+)<\/span>/g, (_, f) =>
+      `<strong>${lookup(f)}</strong>`
     )
-    .replace(/<span class="orderform_link">([^<]+)<\/span>/g, (_, field) =>
-      `<strong>${values[field] ?? `[${field}]`}</strong>`
+    .replace(/<span\b[^>]*class="orderform_link"[^>]*>([^<]+)<\/span>/g, (_, f) =>
+      `<strong>${lookup(f)}</strong>`
     )
-    .replace(/<span class="header_2"[^>]*>([^<]+)<\/span>/g, (_, text) =>
+    .replace(/<span\b[^>]*class="sow_link"[^>]*>([^<]+)<\/span>/g, (_, f) =>
+      `<strong>${lookup(f)}</strong>`
+    )
+    .replace(/<span\b[^>]*class="businessterms_link"[^>]*>([^<]+)<\/span>/g, (_, f) =>
+      `<strong>${lookup(f)}</strong>`
+    )
+    .replace(/<span\b[^>]*class="header_2"[^>]*>([^<]+)<\/span>/g, (_, text) =>
       `<strong class="text-base">${text}</strong>`
     )
-    .replace(/<span class="header_3"[^>]*>([^<]+)<\/span>/g, (_, text) =>
+    .replace(/<span\b[^>]*class="header_3"[^>]*>([^<]+)<\/span>/g, (_, text) =>
       `<strong>${text}</strong>`
     );
 }
