@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import ChatPanel from "@/components/ChatPanel";
+import DocHeader from "@/components/DocHeader";
 import GenericDocPreview from "@/components/GenericDocPreview";
 import { DocumentConfig } from "@/lib/document-configs";
 import { PartyInfo, defaultFormData } from "@/types/nda";
+import { isTokenValid, saveDocument } from "@/lib/api";
 
 interface GenericFormData {
   fields: Record<string, string>;
@@ -40,37 +41,79 @@ interface Props {
   config: DocumentConfig;
 }
 
+const LOAD_KEY = (slug: string) => `prelegal_load_${slug}`;
+
 export default function GenericDocShell({ config }: Props) {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => isTokenValid());
   const [formData, setFormData] = useState<GenericFormData>(defaultGenericData);
   const [activeTab, setActiveTab] = useState<Tab>("chat");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [disclaimerVisible, setDisclaimerVisible] = useState(true);
 
   useEffect(() => {
-    if (!localStorage.getItem("prelegal_user")) {
+    if (!isTokenValid()) {
       router.replace("/login");
-    } else {
-      setReady(true);
+      return;
     }
-  }, [router]);
+    // Load saved fields if navigated from history
+    const stored = sessionStorage.getItem(LOAD_KEY(config.slug));
+    if (stored) {
+      try {
+        setFormData(JSON.parse(stored));
+      } catch {}
+      sessionStorage.removeItem(LOAD_KEY(config.slug));
+    }
+    if (!ready) setReady(true);
+  }, [router, config.slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ready) return null;
 
   function handleFieldsUpdate(fields: Record<string, unknown>) {
+    setSaved(false);
     setFormData((prev) => mergeFields(prev, fields));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await saveDocument(config.slug, config.name, formData);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      // silently fail; user can retry
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <header className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-        <Link href="/" className="text-sm font-medium hover:underline" style={{ color: "#209dd7" }}>
-          ← Documents
-        </Link>
-        <span className="text-gray-300">|</span>
-        <span className="text-sm font-semibold" style={{ color: "#032147" }}>
-          {config.name}
-        </span>
-      </header>
+      <DocHeader
+        docName={config.name}
+        onSave={handleSave}
+        saving={saving}
+        saved={saved}
+      />
+
+      {disclaimerVisible && (
+        <div
+          className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm shrink-0"
+          style={{ backgroundColor: "#fef3c7", borderBottom: "1px solid #fde68a" }}
+        >
+          <span style={{ color: "#92400e" }}>
+            ⚠️ This is an AI-generated draft. It should be reviewed by a qualified legal professional before use.
+          </span>
+          <button
+            onClick={() => setDisclaimerVisible(false)}
+            className="shrink-0 text-xs font-medium hover:opacity-70 transition-opacity"
+            style={{ color: "#92400e" }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-[420px] shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
@@ -137,7 +180,7 @@ function FieldsForm({
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2";
   const inputStyle = { "--tw-ring-color": "#209dd7" } as React.CSSProperties;
-  const labelClass = "block text-xs font-medium mb-1" ;
+  const labelClass = "block text-xs font-medium mb-1";
 
   const partySection = (label: string, key: "party1" | "party2") => (
     <section>

@@ -226,7 +226,12 @@ export default function GenericDocPreview({ config, data }: Props) {
     }
   }
 
-  const html = buildDocumentHtml();
+  const DISCLAIMER_HTML = `
+    <div style="margin-top:32px;padding:12px 16px;border:1px solid #fde68a;border-radius:8px;background:#fef9c3;color:#92400e;font-size:12px;line-height:1.5;">
+      ⚠️ <strong>Draft document — for review purposes only.</strong> This document was generated with AI assistance and must be reviewed and approved by a qualified legal professional before execution or reliance.
+    </div>`;
+
+  const html = buildDocumentHtml() + DISCLAIMER_HTML;
 
   return (
     <div className="flex flex-col h-full bg-gray-50 border-l border-gray-200">
@@ -235,7 +240,8 @@ export default function GenericDocPreview({ config, data }: Props) {
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+          className="flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-md transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: "#753991" }}
         >
           {downloading ? (
             <>
@@ -257,11 +263,23 @@ export default function GenericDocPreview({ config, data }: Props) {
       </div>
 
       <div className="overflow-y-auto flex-1 px-6 py-6">
-        <div
-          ref={previewRef}
-          className="bg-white shadow-sm rounded-lg p-8 max-w-3xl mx-auto"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {!templateHtml ? (
+          <div className="bg-white shadow-sm rounded-lg p-8 max-w-3xl mx-auto space-y-4 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-2/3 mx-auto" />
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-full" />
+                <div className="h-3 bg-gray-100 rounded w-5/6" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            ref={previewRef}
+            className="bg-white shadow-sm rounded-lg p-8 max-w-3xl mx-auto"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
       </div>
     </div>
   );
