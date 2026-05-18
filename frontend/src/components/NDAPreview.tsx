@@ -22,18 +22,29 @@ export default function NDAPreview({ data }: Props) {
       const jsPDF = (await import("jspdf")).jsPDF;
 
       const el = previewRef.current;
+      const captureWidth = el.scrollWidth;
+      const captureHeight = el.scrollHeight;
+
       const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        scrollY: -window.scrollY,
-        windowWidth: 1200,
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        onclone: (clonedDoc) => {
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: captureWidth,
+        windowHeight: captureHeight,
+        width: captureWidth,
+        height: captureHeight,
+        onclone: (clonedDoc, clonedEl) => {
           // html2canvas v1 can't parse oklch/lab colors that Tailwind v4 emits.
           // Strip all stylesheets from the clone and replace with safe hex-only CSS.
           clonedDoc.querySelectorAll("style, link[rel='stylesheet']").forEach(n => n.remove());
+
+          // Without Tailwind, max-w-3xl is gone — pin the clone to the original width
+          // so the table columns don't expand beyond the captured area.
+          clonedEl.style.width = captureWidth + "px";
+          clonedEl.style.maxWidth = captureWidth + "px";
+          clonedEl.style.padding = "32px";
 
           const s = clonedDoc.createElement("style");
           s.textContent = `
