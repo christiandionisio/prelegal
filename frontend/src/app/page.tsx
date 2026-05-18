@@ -1,5 +1,5 @@
-import NDAShell from "@/components/NDAShell";
+import DocumentCatalog from "@/components/DocumentCatalog";
 
 export default function Home() {
-  return <NDAShell />;
+  return <DocumentCatalog />;
 }

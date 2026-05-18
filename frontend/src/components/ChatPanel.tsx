@@ -1,19 +1,48 @@
 "use client";
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { NDAFormData } from "@/types/nda";
 import { streamChat, ChatMessage } from "@/lib/api";
 
 interface Props {
-  formData: NDAFormData;
+  formData: object;
+  documentType: string;
   onFieldsUpdate: (fields: Record<string, unknown>) => void;
+  onRedirect?: (slug: string) => void;
+  placeholder?: string;
 }
 
-export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+function storageKey(docType: string) {
+  return `prelegal_chat_${docType}`;
+}
+
+function loadMessages(docType: string): ChatMessage[] {
+  try {
+    const raw = sessionStorage.getItem(storageKey(docType));
+    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(docType: string, msgs: ChatMessage[]) {
+  try {
+    sessionStorage.setItem(storageKey(docType), JSON.stringify(msgs));
+  } catch {}
+}
+
+export default function ChatPanel({ formData, documentType, onFieldsUpdate, onRedirect, placeholder }: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(documentType));
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Keep a ref so async callbacks always see the latest messages
+  const messagesRef = useRef(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+    saveMessages(documentType, messages);
+  }, [messages, documentType]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,6 +61,7 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
       await streamChat(
         next,
         formData,
+        documentType,
         (chunk) => {
           setMessages((prev) => {
             const updated = [...prev];
@@ -42,7 +72,12 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
             return updated;
           });
         },
-        (fields) => onFieldsUpdate(fields)
+        (fields) => onFieldsUpdate(fields),
+        (slug) => {
+          // Carry the full conversation history to the new document page
+          saveMessages(slug, messagesRef.current);
+          onRedirect?.(slug);
+        },
       );
     } catch {
       setMessages((prev) => {
@@ -55,6 +90,7 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
       });
     } finally {
       setStreaming(false);
+      textareaRef.current?.focus();
     }
   }
 
@@ -71,7 +107,7 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-center max-w-[240px]" style={{ color: "#888888" }}>
-              Tell me about the NDA you need — who are the two parties, and what&apos;s the purpose?
+              {placeholder ?? "Tell me about the document you need — who are the parties and what's the purpose?"}
             </p>
           </div>
         )}
@@ -103,13 +139,14 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
       <div className="px-4 py-3 border-t border-gray-200 bg-white shrink-0">
         <div className="flex gap-2 items-end">
           <textarea
+            ref={textareaRef}
             className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 min-h-[40px] max-h-[120px]"
             style={{ "--tw-ring-color": "#209dd7" } as React.CSSProperties}
             rows={1}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message… (Enter to send)"
+            placeholder={placeholder ?? "Type a message… (Enter to send)"}
             disabled={streaming}
           />
           <button

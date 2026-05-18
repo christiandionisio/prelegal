@@ -17,6 +17,7 @@ RUN uv export --no-hashes --no-emit-project -o /tmp/requirements.txt && \
     uv pip install --system -r /tmp/requirements.txt
 
 COPY backend/prelegal_backend/ ./prelegal_backend/
+COPY templates/ ./templates/
 COPY --from=frontend-builder /app/frontend/out /app/static
 
 RUN mkdir -p /app/data
@@ -24,4 +25,5 @@ RUN mkdir -p /app/data
 EXPOSE 8000
 ENV STATIC_DIR=/app/static
 ENV DB_PATH=/app/data/prelegal.db
+ENV TEMPLATES_DIR=/app/templates
 CMD ["uvicorn", "prelegal_backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
