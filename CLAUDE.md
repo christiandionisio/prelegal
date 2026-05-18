@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation has a foundational Docker setup with a FastAPI backend, a fake login screen, and the original Mutual NDA prototype from PL-3. AI chat, multi-document support, and real authentication are not yet implemented.
+The current implementation has a Docker setup with a FastAPI backend, a fake login screen, and an AI chat interface for the Mutual NDA. Multi-document support and real authentication are not yet implemented.
 
 ## Development process
 
@@ -69,10 +69,18 @@ Backend available at http://localhost:8000
 - Main app redirects to `/login` if not logged in
 - Start/stop scripts for Mac, Linux, Windows in `scripts/`
 
+### Completed (PL-5)
+- AI chat interface replacing the question-series form (left panel, "Chat" tab)
+- Freeform chat with streaming SSE responses (LiteLLM → OpenRouter → Cerebras, `openai/gpt-oss-120b`)
+- Structured outputs extract NDA field values from conversation and populate the live preview in real time
+- "Fields" tab keeps the manual form accessible for overrides
+- `POST /api/chat` SSE endpoint in the backend
+- Start scripts updated with `--env-file .env` to pass `OPENROUTER_API_KEY` to Docker
+
 ### Not yet implemented
-- PL-5: AI chat interface (LiteLLM / OpenRouter / Cerebras)
 - PL-6: Multi-document support (all 11 catalog types)
 - PL-7: Real authentication (JWT, bcrypt, document persistence)
 
 ### Current API Endpoints
 - `GET /api/health` - Health check
+- `POST /api/chat` - SSE stream: text chunks + final `fields` event with extracted NDA values
