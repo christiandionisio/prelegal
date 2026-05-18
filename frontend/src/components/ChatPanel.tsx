@@ -11,12 +11,38 @@ interface Props {
   placeholder?: string;
 }
 
+function storageKey(docType: string) {
+  return `prelegal_chat_${docType}`;
+}
+
+function loadMessages(docType: string): ChatMessage[] {
+  try {
+    const raw = sessionStorage.getItem(storageKey(docType));
+    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(docType: string, msgs: ChatMessage[]) {
+  try {
+    sessionStorage.setItem(storageKey(docType), JSON.stringify(msgs));
+  } catch {}
+}
+
 export default function ChatPanel({ formData, documentType, onFieldsUpdate, onRedirect, placeholder }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(documentType));
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Keep a ref so async callbacks always see the latest messages
+  const messagesRef = useRef(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+    saveMessages(documentType, messages);
+  }, [messages, documentType]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,7 +73,11 @@ export default function ChatPanel({ formData, documentType, onFieldsUpdate, onRe
           });
         },
         (fields) => onFieldsUpdate(fields),
-        onRedirect,
+        (slug) => {
+          // Carry the full conversation history to the new document page
+          saveMessages(slug, messagesRef.current);
+          onRedirect?.(slug);
+        },
       );
     } catch {
       setMessages((prev) => {
@@ -70,8 +100,6 @@ export default function ChatPanel({ formData, documentType, onFieldsUpdate, onRe
       send();
     }
   }
-
-  const defaultPlaceholder = placeholder ?? "Type a message… (Enter to send)";
 
   return (
     <div className="flex flex-col h-full">
@@ -118,7 +146,7 @@ export default function ChatPanel({ formData, documentType, onFieldsUpdate, onRe
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={defaultPlaceholder}
+            placeholder={placeholder ?? "Type a message… (Enter to send)"}
             disabled={streaming}
           />
           <button
