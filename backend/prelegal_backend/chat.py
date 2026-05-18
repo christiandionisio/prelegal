@@ -52,6 +52,7 @@ class NDAFieldsUpdate(BaseModel):
     modifications: Optional[str] = None
     party1: Optional[PartyInfoUpdate] = None
     party2: Optional[PartyInfoUpdate] = None
+    redirect_to: Optional[str] = None
 
 
 def _prompt(doc_name: str, party1_label: str, party2_label: str, fields: list[str]) -> str:
@@ -411,6 +412,15 @@ When the user provides information, acknowledge it briefly and move to the next 
 
 _extraction_model_cache: dict[str, type[BaseModel]] = {}
 
+_REDIRECT_INSTRUCTION = (
+    "\n\nAdditionally: if the conversation makes clear the user wants a DIFFERENT type of "
+    "legal document (not the one currently being filled in), set redirect_to to the matching "
+    "slug from this list: mutual-nda, mutual-nda-cover-page, cloud-service-agreement, "
+    "design-partner-agreement, service-level-agreement, professional-services-agreement, "
+    "data-processing-agreement, software-license-agreement, partnership-agreement, "
+    "pilot-agreement, business-associate-agreement, ai-addendum. Otherwise leave redirect_to null."
+)
+
 
 def _make_extraction_model(document_type: str) -> type[BaseModel]:
     config = DOCUMENT_CONFIGS[document_type]
@@ -421,6 +431,7 @@ def _make_extraction_model(document_type: str) -> type[BaseModel]:
     field_defs: dict = {name: (Optional[str], None) for name in config["extraction_fields"]}
     field_defs["party1"] = (Optional[PartyInfoUpdate], None)
     field_defs["party2"] = (Optional[PartyInfoUpdate], None)
+    field_defs["redirect_to"] = (Optional[str], None)
     model = create_model(f"FieldsUpdate_{document_type.replace('-', '_')}", **field_defs)
     _extraction_model_cache[document_type] = model
     return model
@@ -430,7 +441,7 @@ def _extract_fields(messages: list[dict], document_type: str) -> BaseModel:
     config = DOCUMENT_CONFIGS[document_type]
     model_class = _make_extraction_model(document_type)
     extraction_messages = [
-        {"role": "system", "content": config["extraction_prompt"]},
+        {"role": "system", "content": config["extraction_prompt"] + _REDIRECT_INSTRUCTION},
         *messages,
         {"role": "user", "content": f"Extract the {config['name']} field values from this conversation into structured format."},
     ]
@@ -469,7 +480,11 @@ def stream_chat(messages: list[dict], document_type: str = "mutual-nda") -> Gene
     try:
         fields = _extract_fields(conversation_with_reply, document_type)
         fields_dict = fields.model_dump(exclude_none=True)
-        yield f"data: {json.dumps({'fields': fields_dict})}\n\n"
+        redirect_to = fields_dict.pop("redirect_to", None)
+        if redirect_to and redirect_to in DOCUMENT_CONFIGS and redirect_to != document_type:
+            yield f"data: {json.dumps({'redirect': redirect_to})}\n\n"
+        elif fields_dict:
+            yield f"data: {json.dumps({'fields': fields_dict})}\n\n"
     except Exception:
         pass
     finally:

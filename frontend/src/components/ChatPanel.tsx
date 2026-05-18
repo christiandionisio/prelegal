@@ -7,10 +7,11 @@ interface Props {
   formData: object;
   documentType: string;
   onFieldsUpdate: (fields: Record<string, unknown>) => void;
+  onRedirect?: (slug: string) => void;
   placeholder?: string;
 }
 
-export default function ChatPanel({ formData, documentType, onFieldsUpdate, placeholder }: Props) {
+export default function ChatPanel({ formData, documentType, onFieldsUpdate, onRedirect, placeholder }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -45,7 +46,8 @@ export default function ChatPanel({ formData, documentType, onFieldsUpdate, plac
             return updated;
           });
         },
-        (fields) => onFieldsUpdate(fields)
+        (fields) => onFieldsUpdate(fields),
+        onRedirect,
       );
     } catch {
       setMessages((prev) => {

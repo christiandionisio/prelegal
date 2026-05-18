@@ -8,7 +8,8 @@ export async function streamChat(
   currentFields: object,
   documentType: string,
   onChunk: (chunk: string) => void,
-  onFields: (fields: Record<string, unknown>) => void
+  onFields: (fields: Record<string, unknown>) => void,
+  onRedirect?: (slug: string) => void,
 ): Promise<void> {
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -44,6 +45,7 @@ export async function streamChat(
         const parsed = JSON.parse(data);
         if (parsed.chunk !== undefined) onChunk(parsed.chunk);
         if (parsed.fields !== undefined) onFields(parsed.fields);
+        if (parsed.redirect !== undefined && onRedirect) onRedirect(parsed.redirect);
       } catch {
         // skip malformed lines
       }

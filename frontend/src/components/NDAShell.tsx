@@ -83,6 +83,7 @@ export default function NDAShell() {
               formData={formData}
               documentType="mutual-nda"
               onFieldsUpdate={handleFieldsUpdate}
+              onRedirect={(slug) => router.push(`/doc/${slug}`)}
               placeholder="Tell me about the NDA you need — who are the two parties, and what's the purpose?"
             />
           ) : (

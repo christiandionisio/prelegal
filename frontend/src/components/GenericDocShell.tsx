@@ -99,6 +99,7 @@ export default function GenericDocShell({ config }: Props) {
                 formData={formData}
                 documentType={config.slug}
                 onFieldsUpdate={handleFieldsUpdate}
+                onRedirect={(slug) => router.push(`/doc/${slug}`)}
               />
             ) : (
               <div className="overflow-y-auto h-full p-4 space-y-4">
