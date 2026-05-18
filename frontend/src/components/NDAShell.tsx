@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import NDAForm from "@/components/NDAForm";
 import NDAPreview from "@/components/NDAPreview";
 import ChatPanel from "@/components/ChatPanel";
@@ -13,8 +14,10 @@ function mergeFields(current: NDAFormData, updates: Record<string, unknown>): ND
   const result = { ...current };
   for (const key of Object.keys(updates) as (keyof NDAFormData)[]) {
     if (key === "party1" || key === "party2") {
-      result[key] = { ...current[key], ...(updates[key] as Partial<PartyInfo>) };
-    } else {
+      if (updates[key] != null) {
+        result[key] = { ...current[key], ...(updates[key] as Partial<PartyInfo>) };
+      }
+    } else if (updates[key] != null) {
       (result as Record<string, unknown>)[key] = updates[key];
     }
   }
@@ -42,7 +45,18 @@ export default function NDAShell() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden">
+      <header className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+        <Link href="/" className="text-sm font-medium hover:underline" style={{ color: "#209dd7" }}>
+          ← Documents
+        </Link>
+        <span className="text-gray-300">|</span>
+        <span className="text-sm font-semibold" style={{ color: "#032147" }}>
+          Mutual Non-Disclosure Agreement
+        </span>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
       <aside className="w-[420px] shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
         <div className="flex border-b border-gray-200 shrink-0">
           {(["chat", "fields"] as Tab[]).map((tab) => (
@@ -65,7 +79,12 @@ export default function NDAShell() {
 
         <div className="flex-1 overflow-hidden">
           {activeTab === "chat" ? (
-            <ChatPanel formData={formData} onFieldsUpdate={handleFieldsUpdate} />
+            <ChatPanel
+              formData={formData}
+              documentType="mutual-nda"
+              onFieldsUpdate={handleFieldsUpdate}
+              placeholder="Tell me about the NDA you need — who are the two parties, and what's the purpose?"
+            />
           ) : (
             <div className="overflow-y-auto h-full">
               <NDAForm data={formData} onChange={setFormData} />
@@ -77,6 +96,7 @@ export default function NDAShell() {
       <main className="flex-1 overflow-hidden">
         <NDAPreview data={formData} />
       </main>
+      </div>
     </div>
   );
 }

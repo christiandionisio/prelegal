@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { NDAFormData } from "@/types/nda";
 import { streamChat, ChatMessage } from "@/lib/api";
 
 interface Props {
-  formData: NDAFormData;
+  formData: object;
+  documentType: string;
   onFieldsUpdate: (fields: Record<string, unknown>) => void;
+  placeholder?: string;
 }
 
-export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
+export default function ChatPanel({ formData, documentType, onFieldsUpdate, placeholder }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,6 +34,7 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
       await streamChat(
         next,
         formData,
+        documentType,
         (chunk) => {
           setMessages((prev) => {
             const updated = [...prev];
@@ -55,6 +58,7 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
       });
     } finally {
       setStreaming(false);
+      textareaRef.current?.focus();
     }
   }
 
@@ -65,13 +69,15 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
     }
   }
 
+  const defaultPlaceholder = placeholder ?? "Type a message… (Enter to send)";
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-center max-w-[240px]" style={{ color: "#888888" }}>
-              Tell me about the NDA you need — who are the two parties, and what&apos;s the purpose?
+              {placeholder ?? "Tell me about the document you need — who are the parties and what's the purpose?"}
             </p>
           </div>
         )}
@@ -103,13 +109,14 @@ export default function ChatPanel({ formData, onFieldsUpdate }: Props) {
       <div className="px-4 py-3 border-t border-gray-200 bg-white shrink-0">
         <div className="flex gap-2 items-end">
           <textarea
+            ref={textareaRef}
             className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 min-h-[40px] max-h-[120px]"
             style={{ "--tw-ring-color": "#209dd7" } as React.CSSProperties}
             rows={1}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message… (Enter to send)"
+            placeholder={defaultPlaceholder}
             disabled={streaming}
           />
           <button

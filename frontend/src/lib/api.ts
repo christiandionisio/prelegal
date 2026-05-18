@@ -6,13 +6,18 @@ export interface ChatMessage {
 export async function streamChat(
   messages: ChatMessage[],
   currentFields: object,
+  documentType: string,
   onChunk: (chunk: string) => void,
   onFields: (fields: Record<string, unknown>) => void
 ): Promise<void> {
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, current_fields: currentFields }),
+    body: JSON.stringify({
+      messages,
+      current_fields: currentFields,
+      document_type: documentType,
+    }),
   });
 
   if (!response.ok || !response.body) {
