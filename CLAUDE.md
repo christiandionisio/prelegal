@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation has a Docker setup with a FastAPI backend, a fake login screen, and an AI chat interface for the Mutual NDA. Multi-document support and real authentication are not yet implemented.
+The current implementation has a Docker setup with a FastAPI backend, a fake login screen, and an AI chat interface for all 12 supported legal document types. Real authentication is not yet implemented.
 
 ## Development process
 
@@ -77,10 +77,24 @@ Backend available at http://localhost:8000
 - `POST /api/chat` SSE endpoint in the backend
 - Start scripts updated with `--env-file .env` to pass `OPENROUTER_API_KEY` to Docker
 
+### Completed (PL-6)
+- Document catalog home page (`/`) listing all 12 supported document types
+- All document pages moved to `/doc/[slug]` (e.g. `/doc/mutual-nda`)
+- AI chat supports all 12 document types with per-type system prompts and structured field extraction
+- `GenericDocShell` + `GenericDocPreview` render any document type from its `.md` template
+- `GET /api/templates/{filename}` endpoint converts Markdown templates to HTML (Python `markdown` lib)
+- `DOCUMENT_CONFIGS` in both backend and frontend drive per-document prompts, fields, and extraction models
+- Dynamic Pydantic extraction models created at runtime via `pydantic.create_model()`
+- AI detects when the user wants a different document type and emits a `redirect` SSE event to navigate
+- Chat history persists in `sessionStorage` across document type navigation
+- Chat textarea auto-focuses after each AI response
+- AI always asks a follow-up question when more information is needed
+- XSS-safe token substitution in preview (`esc()` applied to all user-supplied values)
+
 ### Not yet implemented
-- PL-6: Multi-document support (all 11 catalog types)
 - PL-7: Real authentication (JWT, bcrypt, document persistence)
 
 ### Current API Endpoints
 - `GET /api/health` - Health check
-- `POST /api/chat` - SSE stream: text chunks + final `fields` event with extracted NDA values
+- `POST /api/chat` - SSE stream: text chunks + `fields` event with extracted values + optional `redirect` event
+- `GET /api/templates/{filename}` - Returns a Markdown template rendered as HTML
