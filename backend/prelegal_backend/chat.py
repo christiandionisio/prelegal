@@ -392,20 +392,19 @@ When the user provides information, acknowledge it briefly and move to the next 
             [
                 "Provider: Cloud service provider with AI features (name, title, company, address, date)",
                 "Customer: Company using the AI features (name, title, company, address, date)",
-                "AI Features: Which AI features are covered by this addendum",
-                "Training Opt-out: Whether customer can opt out of AI training (yes/no and conditions)",
-                "Effective Date: When the addendum takes effect (YYYY-MM-DD)",
-                "Governing Law: Which state's laws govern",
-                "Jurisdiction: Where disputes would be resolved",
+                "Training Data: What customer data (inputs/outputs) may be used for model training, if any",
+                "Training Purposes: The specific purposes for which training is permitted (e.g. improving the AI model)",
+                "Training Restrictions: Any restrictions on how training data may be used",
+                "Improvement Restrictions: Restrictions on non-training improvement uses of customer data",
             ]
         ),
         "extraction_fields": [
-            "aiFeatures", "trainingOptOut", "effectiveDate",
-            "governingLaw", "jurisdiction",
+            "trainingData", "trainingPurposes", "trainingRestrictions",
+            "improvementRestrictions",
         ],
         "extraction_prompt": (
             "Extract AI Addendum field values from this conversation. "
-            "Use YYYY-MM-DD for dates. Return null for missing fields."
+            "Return null for missing fields."
         ),
     },
 }
